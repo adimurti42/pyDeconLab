@@ -1,22 +1,37 @@
 # pyDeconLab
 
-A small, plugin-based Python package implementing common 3D microscopy deconvolution algorithms:
-Richardson-Lucy, Richardson-Lucy+TV, Landweber, and Tikhonov-Miller.
+A high-performance Python framework for 3D microscopy image deconvolution with adaptive PSF estimation.
 
-Install:
-    pip install numpy scipy tifffile pytest
+---
 
-Requirements:
-    numpy, scipy, tifffile, scikit-image, pyfftw, pyotf
+## Overview
 
-Run CLI example:
-    python -m pydeconlab.main --algo RL --input my_stack.tif --psf my_psf.tif --iterations 30 --output deconv.tif
+**pyDeconLab** is a modular and efficient Python implementation of 3D deconvolution algorithms inspired by EPFL’s DeconvolutionLab2. It is designed to process large confocal microscopy stacks and reconstruct high-resolution volumes by reversing optical blur.
 
-Run tests:
-    pytest -q
+The pipeline supports multiple Point Spread Function (PSF) models, including experimental, physics-based, and data-driven estimation, making it flexible for real-world microscopy workflows.
 
-Notes:
- - The code uses scipy.signal.fftconvolve for efficient FFT-based convolution on CPU.
- - Backend toggle 'cupy' is present, but production GPU usage requires proper cupy and cupyx installations and was not fully implemented here. The code falls back to NumPy/scipy if cupy is not available.
- - PSF generation: pass a .tif or a JSON config specifying {'type':'gaussian','shape':[z,y,x],'sigma':..}
- - Optional pyotf support: if a PSF generation dict requests type 'pyotf' or 'gibson-lanni' and pyotf is installed, pyotf will be used. Otherwise we fallback to a Gaussian PSF.
+---
+
+## Features
+
+- Richardson–Lucy (RL) deconvolution
+- RL with Total Variation regularization (RLTV)
+- FFT-accelerated convolution for large 3D stacks
+- Blockwise processing for memory-efficient computation
+- Multiple PSF modes:
+  - Gaussian approximation
+  - Gibson–Lanni optical model (via `pyotf`)
+  - Measured PSF from bead stacks
+  - Automatic PSF estimation from image data
+- TIFF stack support with metadata preservation
+- Modular architecture for easy extension
+
+---
+
+## Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/your-username/pyDeconLab.git
+cd pyDeconLab
