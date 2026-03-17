@@ -6,6 +6,9 @@ Richardson-Lucy, Richardson-Lucy+TV, Landweber, and Tikhonov-Miller.
 Install:
     pip install numpy scipy tifffile pytest
 
+Requirements:
+    numpy, scipy, tifffile, scikit-image, pyfftw, pyotf
+
 Run CLI example:
     python -m pydeconlab.main --algo RL --input my_stack.tif --psf my_psf.tif --iterations 30 --output deconv.tif
 
