@@ -33,5 +33,5 @@ The pipeline supports multiple Point Spread Function (PSF) models, including exp
 Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/pyDeconLab.git
+git clone https://github.com/adimurti42/pyDeconLab.git
 cd pyDeconLab
