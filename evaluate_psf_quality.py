@@ -1,14 +1,11 @@
-"""Evaluate PSF/reconstruction quality metrics for microscopy volumes."""
+#Evaluate PSF/reconstruction quality metrics for microscopy volumes.
 
 from __future__ import annotations
-
 import argparse
 import logging
 from pathlib import Path
 from typing import Optional
-
 import numpy as np
-
 from pydeconlab.io import _normalize_psf, load_tiff
 
 logger = logging.getLogger(__name__)
@@ -17,7 +14,6 @@ try:
     from skimage.metrics import structural_similarity
 except Exception:  # pragma: no cover - optional dependency
     structural_similarity = None
-
 
 def _fwhm_from_profile(profile: np.ndarray) -> float:
     profile = np.asarray(profile, dtype=np.float32)
@@ -51,7 +47,6 @@ def _fwhm_from_profile(profile: np.ndarray) -> float:
 
     return max(right_x - left_x, 0.0)
 
-
 def psnr(reference: np.ndarray, candidate: np.ndarray) -> float:
     mse = float(np.mean((reference - candidate) ** 2, dtype=np.float64))
     if mse <= 0:
@@ -60,7 +55,6 @@ def psnr(reference: np.ndarray, candidate: np.ndarray) -> float:
     if data_range <= 0:
         data_range = 1.0
     return 20.0 * np.log10(data_range) - 10.0 * np.log10(mse)
-
 
 def ssim(reference: np.ndarray, candidate: np.ndarray) -> float:
     if structural_similarity is not None:
@@ -90,7 +84,6 @@ def ssim(reference: np.ndarray, candidate: np.ndarray) -> float:
     denominator = (mu_x * mu_x + mu_y * mu_y + c1) * (sigma_x + sigma_y + c2)
     return float(numerator / denominator)
 
-
 def bead_fwhm(psf: np.ndarray) -> tuple[float, float]:
     normalized = _normalize_psf(psf)
     peak = np.unravel_index(int(np.argmax(normalized)), normalized.shape)
@@ -101,7 +94,6 @@ def bead_fwhm(psf: np.ndarray) -> tuple[float, float]:
     fwhm_xy = float(np.nanmean([_fwhm_from_profile(profile_x), _fwhm_from_profile(profile_y)]))
     fwhm_z = float(_fwhm_from_profile(profile_z))
     return fwhm_xy, fwhm_z
-
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Evaluate PSF and reconstruction quality.")
@@ -128,7 +120,6 @@ def main() -> int:
         logger.info("SSIM: %.5f", ssim(reference, candidate))
 
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
