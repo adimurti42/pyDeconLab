@@ -1,0 +1,149 @@
+"""
+CLI entrypoint for pyDeconLab.
+
+Usage (example):
+    python -m pydeconlab.main --algo RL --input stack.tif --psf psf.tif --iterations 30 --output deconv.tif
+
+Supports:
+ - algorithm choices: RL, RLTV, Landweber, Tikhonov
+ - psf: .tif file or .json config or inline JSON string
+ - backend toggle: numpy (default) or cupy (experimental)
+"""
+
+import argparse
+import json
+import logging
+from pathlib import Path
+
+import numpy as np
+
+from .io import load_tiff, save_tiff, load_or_generate_psf
+from .algorithms import RichardsonLucy, RLTV, Landweber, TikhonovMiller
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+PLUGIN_REGISTRY = {
+    "RL": RichardsonLucy,
+    "RLTV": RLTV,
+    "Landweber": Landweber,
+    "Tikhonov": TikhonovMiller,
+}
+
+
+def parse_psf_arg(psf_arg: str):
+    """
+    Determine whether psf_arg points to a file (.tif or .json) or is an inline JSON string.
+    Returns a path or dict accordingly.
+    """
+    if psf_arg is None:
+        return None
+    path = Path(psf_arg)
+    if path.exists():
+        if path.suffix.lower() in (".tif", ".tiff", ".json"):
+            if path.suffix.lower() in (".json",):
+                return json.loads(path.read_text())
+            else:
+                return str(path)
+        else:
+            # attempt to read as JSON content if small string
+            try:
+                return json.loads(path.read_text())
+            except Exception:
+                return str(path)
+    else:
+        # try parse as JSON string
+        try:
+            return json.loads(psf_arg)
+        except Exception:
+            # treat as a raw filename path (likely invalid)
+            return psf_arg
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        prog="pyDeconLab", description="pyDeconLab - 3D microscopy deconvolution"
+    )
+    parser.add_argument(
+        "--algo",
+        required=True,
+        choices=list(PLUGIN_REGISTRY.keys()),
+        help="Algorithm to run",
+    )
+    parser.add_argument("--input", required=True, help="Input TIFF stack (3D)")
+    parser.add_argument(
+        "--psf", required=True, help="PSF: path to .tif or .json config, or inline JSON"
+    )
+    parser.add_argument(
+        "--iterations",
+        type=int,
+        default=20,
+        help="Number of iterations (for iterative methods)",
+    )
+    parser.add_argument(
+        "--lambda_reg", type=float, default=1e-3, help="Regularization weight (lambda)"
+    )
+    parser.add_argument(
+        "--alpha", type=float, default=None, help="Step size for Landweber"
+    )
+    parser.add_argument(
+        "--eps", type=float, default=1e-12, help="Numeric epsilon for algorithms"
+    )
+    parser.add_argument("--output", required=True, help="Output TIFF filename")
+    parser.add_argument(
+        "--backend",
+        choices=["numpy", "cupy"],
+        default="numpy",
+        help="Backend (numpy default)",
+    )
+    parser.add_argument(
+        "--psf-shape",
+        nargs=3,
+        type=int,
+        default=None,
+        help="If generating PSF, target shape (z y x)",
+    )
+    args = parser.parse_args(argv)
+
+    # Load input stack
+    logger.info("Loading input image: %s", args.input)
+    img = load_tiff(args.input)
+    # parse psf arg
+    psf_arg = parse_psf_arg(args.psf)
+    psf = load_or_generate_psf(
+        psf_arg, target_shape=tuple(args.psf_shape) if args.psf_shape else img.shape
+    )
+
+    algo_cls = PLUGIN_REGISTRY[args.algo]
+    # map generic args to class-specific kwargs
+    kwargs = {"psf": psf, "backend": args.backend}
+    if args.algo == "RL":
+        kwargs.update({"iterations": args.iterations, "eps": args.eps})
+    elif args.algo == "RLTV":
+        kwargs.update(
+            {
+                "iterations": args.iterations,
+                "lambda_reg": args.lambda_reg,
+                "eps": args.eps,
+            }
+        )
+    elif args.algo == "Landweber":
+        kwargs.update(
+            {"iterations": args.iterations, "alpha": args.alpha, "eps": args.eps}
+        )
+    elif args.algo == "Tikhonov":
+        kwargs.update({"lambda_reg": args.lambda_reg, "eps": args.eps})
+    else:
+        raise ValueError(f"Unsupported algorithm: {args.algo}")
+
+    logger.info("Initializing %s with %s", args.algo, kwargs)
+    deconv = algo_cls(**kwargs)
+    logger.info("Running deconvolution...")
+    result = deconv.deconvolve(img)
+    logger.info("Saving result to %s", args.output)
+    save_tiff(args.output, result)
+    logger.info("Done.")
+
+
+if __name__ == "__main__":
+    main()
