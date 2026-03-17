@@ -1,24 +1,17 @@
-"""VS Code-friendly entrypoint for pyDeconLab deconvolution.
-
+"""VS Code-friendly entrypoint for pyDeconLab deconvolution:
 Edit the parameters in the configuration block below and run this file.
 If command-line arguments are provided, they are passed through to the
 package CLI unchanged.
 """
 
 from __future__ import annotations
-
 import os
 from pathlib import Path
 import sys
-
 from pydeconlab.main import main
 
-
-# ---------------------------------------------------------------------------
-# Editable parameters for "Run Python File" in VS Code
-# ---------------------------------------------------------------------------
-input_path = "C:\\DyNaMo\\pyDeconLab\\data\\Stack 11.56.13 Green.tif"
-output_path = "C:\\DyNaMo\\pyDeconLab\\output\\Stack 11.56.13 Green_deconv3.tif"
+input_path = "ENTER_INPUT_PATH"
+output_path = "ENTER_OUTPUT_PATH"
 algorithm = "RL"
 psf_mode = "gaussian"
 psf_shape = (21, 21, 21)
@@ -32,9 +25,7 @@ stream_output = True
 # Optional extras for measured PSFs
 psf_file = None
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent
-
 
 def _resolve_path(value: str | None) -> Path | None:
     if value is None:
@@ -43,7 +34,6 @@ def _resolve_path(value: str | None) -> Path | None:
     if path.is_absolute():
         return path
     return PROJECT_ROOT / path
-
 
 def _build_configured_argv() -> list[str]:
     input_file = _resolve_path(input_path)
@@ -94,7 +84,6 @@ def _build_configured_argv() -> list[str]:
         argv.append("--stream-output")
 
     return argv
-
 
 if __name__ == "__main__":
     os.chdir(PROJECT_ROOT)
