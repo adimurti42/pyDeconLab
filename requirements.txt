@@ -1,6 +1,0 @@
-numpy
-scipy
-tifffile
-scikit-image
-pyfftw
-pyotf
