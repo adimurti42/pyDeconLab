@@ -1,4 +1,4 @@
-"""Alternative launcher for the pyDeconLab high-quality deconvolution CLI."""
+#Alternative launcher for the pyDeconLab high-quality deconvolution CLI.
 
 from __future__ import annotations
 
